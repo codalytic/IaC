@@ -1,0 +1,48 @@
+# AWS Profile and Region Configuration
+aws_profile       = "<your-aws-profile>"        # AWS CLI profile name (e.g., "default", "prod")
+aws_region        = "<primary-region>"          # Primary AWS region for the backend bucket (e.g., "us-east-1")
+aws_target_region = "<replication-region>"      # Target AWS region for replication bucket (e.g., "us-east-2")
+
+# IAM Configuration
+replication_iam_role       = "<replication-role-name>"        # Name for the IAM role used for S3 replication (will be created by this config)
+replication_iam_policy     = "<replication-policy-name>"      # Name for the IAM policy attached to replication role (will be created by this config)
+terraform_trusted_role_arn = "<trusted-role-arn>"             # ARN of an EXISTING IAM role/user that needs access to the backend (e.g., "arn:aws:iam::123456789012:role/terraform-admin")
+                                                               # This role/user must already exist - it will be granted permissions to read/write state and manage locks
+
+# S3 Bucket Configuration
+backend_bucket = "<backend-bucket-name>"          # Name for the primary S3 bucket storing Terraform state
+target_bucket  = "<replication-bucket-name>"      # Name for the secondary S3 bucket for cross-region replication
+
+# Resource Tags
+# Common tags applied to all backend resources
+backend_tags = {
+  environment = "<environment>"        # Environment name (e.g., "production", "staging", "development")
+  provisioner = "terraform"            # Keep as "terraform" or your IaC tool
+  owner       = "<team-name>"          # Team or department owning this infrastructure
+  managed_by  = "<your-name>"          # Point of contact or owner's name
+}
+
+# Optional: Additional tags for primary backend bucket only (merged with backend_tags)
+backend_bucket_additional_tags = {
+  # description = "Primary Terraform state storage"
+  # backup_policy = "cross-region-replication"
+}
+
+# Optional: Additional tags for replication target bucket only (merged with backend_tags)
+target_bucket_additional_tags = {
+  # description = "Replication target for Terraform state"
+  # purpose = "disaster-recovery"
+}
+
+# DynamoDB Locking Table Configuration
+backend_dd = {
+  lock_table     = "<dynamodb-table-name>"     # Name for the DynamoDB table (should match 'name' field)
+  name           = "<dynamodb-table-name>"     # Name for the DynamoDB table
+  read_capacity  = 5                           # DynamoDB read capacity units (5 is usually sufficient)
+  write_capacity = 5                           # DynamoDB write capacity units (5 is usually sufficient)
+  hash_key       = "LockID"                    # Primary key name (keep as "LockID" for Terraform compatibility)
+  attribute = {
+    name = "LockID"                            # Attribute name (must match hash_key)
+    type = "S"                                 # Attribute type: "S" for String
+  }
+}
